@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.8/d3.min.js" charset="utf-8"></script>
+    <link href="nv.d3.css" rel="stylesheet" type="text/css">
+    <script src="scripts/nvd3.min.js"></script>
+    <style>
+        text {
+            font: 12px sans-serif;
+        }
+
+        svg {
+            display: block;
+        }
+
+        html,
+        body,
+        #oechart,
+        svg {
+            margin: 0px;
+            padding: 0px;
+            height: 100%;
+            width: 100%;
+        }
+
+        #charttitle {
+            text-align: center;
+            padding: 1px;
+            margin: 1px;
+            font-size: 30px;
+            color: grey;
+        }
+    </style>
+</head>
+<body>
+    <div id="oechart" class='with-transitions'>
+        <div id="charttitle">Orbital Energies</div>
+        <svg></svg>
+    </div>
+    <script>
+    d3.json("data.json", function(error, data) {
+
+      var fitScreen = false;
+      var width = 1000;
+      var height = 800;
+      var positionX = 850;
+
+      var verticalOffset = 25;
+      var minOEnergy;
+      var maxOEnergy;
+
+      var randomColor = (function() {
+        var golden_ratio_conjugate = 0.618033988749895;
+        var h = Math.random();
+
+        var hslToRgb = function(h, s, l) {
+          var r, g, b;
+
+          if (s == 0) {
+            r = g = b = l; // achromatic
+          } else {
+            function hue2rgb(p, q, t) {
+              if (t < 0) t += 1;
+              if (t > 1) t -= 1;
+              if (t < 1 / 6) return p + (q - p) * 6 * t;
+              if (t < 1 / 2) return q;
+              if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+              return p;
+            }
+
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            var p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+          }
+
+          return '#' + Math.round(r * 255).toString(16) + Math.round(g * 255).toString(16) + Math.round(b * 255).toString(16);
+        };
+
+        return function() {
+          h += golden_ratio_conjugate;
+          h %= 1;
+          return hslToRgb(h, 0.5, 0.60);
+        };
+      })();
+
+      function updateChart() {
+        var positionY = 50;
+        nv.addGraph(function() {
+          var chart = nv.models.lineChart()
+            .color(randomColor)
+            .interpolate("linear")
+
+          chart.useInteractiveGuideline(false);
+
+          chart.showLabels(true);
+
+          chart.xAxis
+            .axisLabel('Structures')
+            .axisLabelDistance(30)
+            .tickFormat(d3.format(',r'))
+            .ticks(data.increments + 1)
+
+          chart.lines.dispatch.on("elementClick", function(evt) {
+            console.log(evt);
+          });
+
+          chart.yAxis
+            .axisLabel('Orbital Energy')
+            .axisLabelDistance(50)
+            .tickPadding(10)
+            .tickFormat(d3.format(',.4f'));
+
+          setMinMaxEnergies();
+
+          chart.xDomain([1, data.increments + 1])
+          chart.yDomain([minOEnergy - 0.11, maxOEnergy + 0.1]);
+
+          d3.select('#oechart svg')
+            .attr('perserveAspectRatio', 'xMinYMin')
+            .attr('width', width)
+            .attr('height', height)
+            .datum(data.orbitalEnergies);
+
+          setChartViewBox();
+          resizeChart();
+
+          nv.utils.windowResize(resizeChart);
+
+          function updateLegendPosition() {
+            d3.selectAll('.nv-legend .nv-series')[0].forEach(function(d) {
+              positionY += verticalOffset;
+              d3.select(d).attr('transform', 'translate(' + positionX + ',' + positionY + ')');
+            });
+
+            setMinMaxEnergies();
+          }
+          d3.select('.nv-legend').on("click", function() {
+            positionY = 50;
+            updateLegendPosition();
+            updateChart();
+          });
+
+          d3.select('.nv-legend').on("dblclick", function() {
+            positionY = 50;
+            updateLegendPosition();
+            updateChart();
+          });
+
+          updateLegendPosition();
+
+          function setChartViewBox() {
+            chart
+              .width(width - 100)
+              .height(height - 100);
+
+            d3.select('#oechart svg')
+              .attr('viewBox', '0 0 ' + width + ' ' + height)
+              .transition().duration(500)
+              .call(chart);
+          }
+
+          function resizeChart() {
+            var container = d3.select('#oechart');
+            var svg = container.select('svg');
+
+            if (fitScreen) {
+              var windowSize = nv.utils.windowSize();
+              svg.attr("width", windowSize.width);
+              svg.attr("height", windowSize.height);
+            } else {
+              var aspect = chart.width() / chart.height();
+              var targetWidth = parseInt(container.style('width'));
+              svg.attr("width", targetWidth);
+              svg.attr("height", Math.round(targetWidth / aspect));
+            }
+          }
+          return chart;
+        });
+      }
+
+      updateChart();
+
+      function setMinMaxEnergies() {
+        var valueList = [];
+        var hasNegativeValues = false;
+
+        for (var i = 0; i < data.orbitalEnergies.length; i++) {
+          // Only displayed should be considered
+          if (!data.orbitalEnergies[i].disabled) {
+            data.orbitalEnergies[i].values.forEach(function(d) {
+              if (d.y < 0) {
+                hasNegativeValues = true;
+              }
+            })
+
+            if (hasNegativeValues) {
+
+              var tempVal = d3.min(data.orbitalEnergies[i].values, function(d) {
+                return d.y;
+              });
+              valueList.push(tempVal);
+              hasNegativeValues = 0;
+            } else {
+              var tempVal = d3.max(data.orbitalEnergies[i].values, function(d) {
+                return d.y;
+              });
+              valueList.push(tempVal);
+            }
+
+          }
+        }
+
+        minOEnergy = d3.min(valueList);
+        maxOEnergy = d3.max(valueList);
+      };
+    })
+    </script>
+</body>
+</html>

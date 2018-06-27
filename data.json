@@ -1,0 +1,8 @@
+//json format - the values will be generated dynamically. 
+{"nodes":[{"id":"","type":}]
+"links":[{"source":"","target":"","lvalue":"","type":""}],
+"linkers":[{"ids":[","","",""...],"type":""}],
+"increments":,"totalorbitals":,"filledCount":,
+"orbitalEnergies":[{"key":"","values":[{"x":,"y":}]}],
+"minOrbitalEnergy":,
+"maxOrbitalEnergy":}
