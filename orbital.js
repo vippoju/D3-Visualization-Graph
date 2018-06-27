@@ -192,45 +192,7 @@
                 return unfilledList;
             }
 
-            function setWidth(increment) {
-
-                switch (increment) {
-                    case 100:
-                        width = 6500 - margin.left - margin.right;
-                        break;
-                    case 50:
-                        width = 4000 - margin.left - margin.right;
-                        break;
-                    case 25:
-                        width = 2000 - margin.left - margin.right;
-                        break;
-                    case 20:
-                        width = 1500 - margin.left - margin.right;
-                        break;
-                    case 10:
-                        width = 1000 - margin.left - margin.right;
-                        break;
-                    case 5:
-                        width = 600 - margin.left - margin.right;
-                        break;
-                    case 4:
-                        width = 600 - margin.left - margin.right;
-                        break;
-                    case 2:
-                        width = 500 - margin.left - margin.right;
-                        break;
-                    default:
-                        width = 1800 - margin.left - margin.right;
-                }
-
-                return width;
-
-            }
-
-            width = setWidth(increments);
-            // var updatednodes = updateNodes(data.nodes, interval, orbitalList, unfilledorbitalList);
-            //  var updatedlinks = updateLinks(interval, orbitalList, unfilledorbitalList);
-            // drawOrbitalMapping(updatedlinks, updatednodes);
+             width = 1500 - margin.left - margin.right;
 
             drawOrbitalMapping(data.links, data.nodes)
 
